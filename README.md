@@ -183,44 +183,46 @@ Also integrates with **Claude** or **Gemini** for:
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 👋 New to cPanel? Start Here!
 
-- PHP 8.0 or higher
-- SQLite 3 with PDO support
-- cPanel account with API access
-- (Optional) Cloudflare account
-- (Optional) AI API key (Claude or Gemini)
+**Complete Beginner?** Follow our step-by-step guide:
+### **📖 [Complete Beginner Guide →](BEGINNER_GUIDE.md)**
+*Covers everything from "What is cPanel?" to your first deployed site*
 
-### 5-Minute Setup
+**Want to Jump In?** Get set up in 10 minutes:
+### **⚡ [10-Minute Quick Start →](QUICK_START.md)**
+*Condensed setup guide with exact steps and times*
+
+**Prefer Video?** Watch along as you set up:
+### **🎥 [Video Tutorial →](VIDEO_SCRIPT_BEGINNER.md)**
+*Full walkthrough coming to YouTube soon!*
+
+---
+
+### For Experienced Developers
 
 ```bash
 # 1. Download
-git clone https://github.com/yourusername/demetrly.git
-cd demetrly
+git clone https://github.com/elblanco2/demetrly.git
 
-# 2. Configure
-cp creator_config.sample.php /secure/path/creator_config.php
-nano /secure/path/creator_config.php
-# Fill in your cPanel credentials
+# 2. Upload to public_html/demetrly/
 
-# 3. Set Permissions
-chmod 600 /secure/path/creator_config.php
-mkdir -p /home/yourusername/data
-chmod 755 /home/yourusername/data
+# 3. Configure
+cp creator_config.sample.php creator_config.php
+# Add API keys: cPanel, Cloudflare, Anthropic
 
-# 4. Upload to Web Server
-# Place files in public_html/demetrly/
+# 4. Set Permissions
+chmod 600 creator_config.php
+mkdir -p ~/data ~/logs
 
 # 5. Access
 # https://yourdomain.com/demetrly/
 ```
 
-**Generate Admin Password**:
+**Generate Password Hash:**
 ```bash
-php -r "echo password_hash('YourStrongPassword', PASSWORD_DEFAULT);"
+php -r "echo password_hash('YourPassword', PASSWORD_DEFAULT);"
 ```
-
-Add the output to your config file's `admin_key_hash`.
 
 ---
 
