@@ -30,16 +30,20 @@ return [
     'cloudflare_zone_id' => 'YOUR_CLOUDFLARE_ZONE_ID',
 
     // =================================================================
-    // AI API Configuration (Optional - for content generation)
+    // AI API Configuration (REQUIRED for AI Deployment Assistant)
     // =================================================================
-    // Choose one: 'anthropic' or 'gemini'
-    'ai_provider' => 'anthropic',
+    // The AI assistant helps users deploy apps, fix errors, and configure sites
+    // Each subdomain gets its own AI chat interface powered by Claude
 
-    // Anthropic Claude API
+    // Anthropic Claude API (RECOMMENDED)
     // Get key from: https://console.anthropic.com/
+    // Cost: ~$0.01-0.05 per deployment conversation
     'anthropic_api_key' => 'sk-ant-YOUR_ANTHROPIC_API_KEY',
 
-    // Google Gemini API
+    // Choose AI provider: 'anthropic' (recommended) or 'gemini'
+    'ai_provider' => 'anthropic',
+
+    // Google Gemini API (Alternative)
     // Get key from: https://makersuite.google.com/app/apikey
     'gemini_api_key' => 'YOUR_GEMINI_API_KEY',
 
@@ -60,8 +64,13 @@ return [
     'log_path' => '/home/your_username/logs/subdomain_creation.log',
 
     // Template directory for new subdomains
-    // This directory will be copied to each new subdomain
-    'template_path' => '/home/your_username/public_html/_subdomain_template',
+    // Default: 'ai-assistant' - Deploys AI chat interface that helps with deployment
+    // Alternative: 'modern' - Beautiful static template
+    // Custom: Point to your own template directory
+    'template_path' => __DIR__ . '/templates/ai-assistant',
+
+    // If you prefer the static modern template instead:
+    // 'template_path' => __DIR__ . '/templates/modern',
 
     // =================================================================
     // Optional: Advanced Settings
