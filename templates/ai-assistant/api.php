@@ -230,9 +230,10 @@ function handleAction($action, $params) {
             $uploadCode = getUploadTemplate();
             file_put_contents($currentDir . '/upload.php', $uploadCode);
 
+            $uploadUrl = $config['WEBSITE_URL'] . '/upload.php';
             echo json_encode([
                 'success' => true,
-                'message' => 'Upload interface created! Visit upload.php to upload files.'
+                'message' => "Upload interface created! Visit {$uploadUrl} to drag and drop your files."
             ]);
             break;
 
