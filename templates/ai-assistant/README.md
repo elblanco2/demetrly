@@ -46,11 +46,14 @@ Paste a GitHub URL and AI detects:
 
 ```
 ai-assistant/
-├── index.html      # Chat interface (beautiful UI)
-├── chat.js         # Frontend logic
-├── api.php         # Backend (proxies to Claude)
-├── config.php      # Configuration (auto-generated)
-└── README.md       # This file
+├── index.html            # Chat interface (beautiful UI)
+├── chat.js               # Frontend logic
+├── api.php               # Backend (proxies to Claude)
+├── config.template.php   # Config template (copied as config.php)
+└── README.md             # This file
+
+Note: When Demetrly creates a subdomain, config.template.php
+is copied as config.php with placeholders replaced.
 ```
 
 ## API Integration
