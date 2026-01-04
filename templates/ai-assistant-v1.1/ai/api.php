@@ -271,12 +271,14 @@ function handleAction($action, $params) {
 
         case 'create_upload':
             $uploadCode = getUploadTemplate();
-            file_put_contents($currentDir . '/upload.php', $uploadCode);
+            $rootDir = dirname($currentDir);
+            file_put_contents($rootDir . '/upload.php', $uploadCode);
 
             $uploadUrl = $config['WEBSITE_URL'] . '/upload.php';
             echo json_encode([
                 'success' => true,
-                'message' => "Upload interface created! Visit {$uploadUrl} to drag and drop your files."
+                'message' => "Upload interface created at /upload.php",
+                'upload_url' => $uploadUrl
             ]);
             break;
 
