@@ -568,7 +568,10 @@ function copyTemplateFiles($subdomainName, $config, $aiContent = null, $formData
         // 4. Customize root/index.html
         customizeRootIndex($targetPath . '/index.html', $subdomainName, $fullDomain, $formData);
 
-        // 5. Customize ai/config.php
+        // 5. Customize ai/index.html
+        customizeAIIndex($aiTargetPath . '/index.html', $subdomainName, $fullDomain);
+
+        // 6. Customize ai/config.php
         customizeAIConfig($aiTargetPath . '/config.php', $subdomainName, $fullDomain, $config, $formData);
 
         logMessage("AI Assistant v1.1 deployed to {$fullDomain}", 'SUCCESS');
@@ -647,6 +650,26 @@ function customizeRootIndex($indexPath, $subdomainName, $fullDomain, $formData) 
 
     file_put_contents($indexPath, $content);
     logMessage("Customized root index.html for {$fullDomain}", 'INFO');
+}
+
+/**
+ * Customize ai/index.html for v1.1 template
+ */
+function customizeAIIndex($indexPath, $subdomainName, $fullDomain) {
+    if (!file_exists($indexPath)) {
+        logMessage("AI index.html not found: {$indexPath}", 'WARNING');
+        return;
+    }
+
+    $content = file_get_contents($indexPath);
+
+    // Replace placeholders
+    $siteName = ucfirst($subdomainName);
+    $content = str_replace('{{SITE_NAME}}', sanitizeInput($siteName), $content);
+    $content = str_replace('{{FULL_DOMAIN}}', sanitizeInput($fullDomain), $content);
+
+    file_put_contents($indexPath, $content);
+    logMessage("Customized AI index.html for {$fullDomain}", 'INFO');
 }
 
 /**

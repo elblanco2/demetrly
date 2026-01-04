@@ -172,7 +172,8 @@ function formatMessage(text) {
     text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
 
     // Convert URLs to links BEFORE converting newlines (prevents <br> from being included in URLs)
-    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+    // Don't use target="_blank" to avoid popup blocker issues
+    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1">$1</a>');
 
     // Convert line breaks
     text = text.replace(/\n/g, '<br>');
