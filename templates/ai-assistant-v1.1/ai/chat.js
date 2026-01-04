@@ -171,11 +171,11 @@ function formatMessage(text) {
     // Convert inline code
     text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
 
+    // Convert URLs to links BEFORE converting newlines (prevents <br> from being included in URLs)
+    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+
     // Convert line breaks
     text = text.replace(/\n/g, '<br>');
-
-    // Convert URLs to links
-    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
 
     return text;
 }
