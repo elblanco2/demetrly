@@ -46,7 +46,7 @@
             <div class="about-grid">
                 <div class="about-content">
                     <p>{{ABOUT_TEXT}}</p>
-                    <p>This site was automatically provisioned using SubForge - complete cPanel subdomain automation.</p>
+                    <p>This site was automatically provisioned using Demetrly - complete cPanel subdomain automation.</p>
                 </div>
                 <div class="about-stats">
                     <div class="stat">
@@ -139,7 +139,7 @@
     <footer class="footer">
         <div class="container">
             <p>&copy; <?php echo date('Y'); ?> {{SITE_NAME}}. All rights reserved.</p>
-            <p class="powered-by">Powered by <a href="https://github.com/yourusername/subforge" target="_blank">SubForge</a></p>
+            <p class="powered-by">Powered by <a href="https://github.com/yourusername/demetrly" target="_blank">Demetrly</a></p>
         </div>
     </footer>
 

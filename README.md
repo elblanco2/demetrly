@@ -1,4 +1,4 @@
-# SubForge ⚡
+# Demetrly ⚡
 
 **Complete cPanel Subdomain Automation with AI Content Generation**
 
@@ -10,11 +10,11 @@ The most comprehensive open-source subdomain management system for cPanel. Creat
 
 ---
 
-## 🚀 Why SubForge?
+## 🚀 Why Demetrly?
 
-Most subdomain tools only handle **one** thing - either DNS, or cPanel, or file deployment. **SubForge does it all**:
+Most subdomain tools only handle **one** thing - either DNS, or cPanel, or file deployment. **Demetrly does it all**:
 
-| Feature | SubForge | Other Tools |
+| Feature | Demetrly | Other Tools |
 |---------|----------|-------------|
 | cPanel Subdomain Creation | ✅ | ⚠️ Some |
 | Cloudflare DNS Automation | ✅ | ⚠️ Some |
@@ -155,8 +155,8 @@ Integrate with **Claude** or **Gemini** to automatically generate:
 
 ```bash
 # 1. Download
-git clone https://github.com/yourusername/subforge.git
-cd subforge
+git clone https://github.com/yourusername/demetrly.git
+cd demetrly
 
 # 2. Configure
 cp creator_config.sample.php /secure/path/creator_config.php
@@ -169,10 +169,10 @@ mkdir -p /home/yourusername/data
 chmod 755 /home/yourusername/data
 
 # 4. Upload to Web Server
-# Place files in public_html/subforge/
+# Place files in public_html/demetrly/
 
 # 5. Access
-# https://yourdomain.com/subforge/
+# https://yourdomain.com/demetrly/
 ```
 
 **Generate Admin Password**:
@@ -190,13 +190,13 @@ Add the output to your config file's `admin_key_hash`.
 
 **Scenario**: Agency manages 50+ client sites on one server
 
-**Before SubForge**:
+**Before Demetrly**:
 - ⏰ 15 minutes per subdomain setup
 - 🔧 Manual cPanel, DNS, database configuration
 - 📝 Tracking in spreadsheets
 - 🗑️ Partial cleanup when projects end
 
-**After SubForge**:
+**After Demetrly**:
 - ⚡ 30 seconds per subdomain
 - 🤖 One-click automation
 - 📊 SQLite database tracks everything
@@ -299,7 +299,7 @@ return [
 ## 📁 Project Structure
 
 ```
-subforge/
+demetrly/
 ├── index.php                 # Main application
 ├── creator_config.sample.php # Sample config
 ├── includes/
@@ -467,9 +467,9 @@ Free for personal and commercial use. Attribution appreciated but not required.
 
 ## 📞 Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/yourusername/subforge/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/subforge/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/subforge/discussions)
+- **Documentation**: [GitHub Wiki](https://github.com/yourusername/demetrly/wiki)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/demetrly/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/demetrly/discussions)
 - **Security**: See [SECURITY.md](SECURITY.md)
 
 ---
@@ -499,7 +499,7 @@ Free for personal and commercial use. Attribution appreciated but not required.
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/subforge&type=Date)](https://star-history.com/#yourusername/subforge&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/demetrly&type=Date)](https://star-history.com/#yourusername/demetrly&Date)
 
 ---
 

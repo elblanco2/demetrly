@@ -1,4 +1,4 @@
-# SubForge Templates
+# Demetrly Templates
 
 This directory contains templates that are deployed to new subdomains.
 
@@ -84,7 +84,7 @@ Use in templates:
 
 ## AI Content Generation
 
-When AI generation is enabled, SubForge can automatically populate:
+When AI generation is enabled, Demetrly can automatically populate:
 
 - `{{WELCOME_CONTENT}}` - AI-generated welcome message
 - `{{ABOUT_TEXT}}` - AI-generated about section
@@ -275,4 +275,4 @@ Have a great template? Share it!
 
 ---
 
-**Need help?** Check the [main documentation](../README.md) or open an [issue](https://github.com/yourusername/subforge/issues).
+**Need help?** Check the [main documentation](../README.md) or open an [issue](https://github.com/yourusername/demetrly/issues).

@@ -1258,7 +1258,7 @@ if (isset($_GET['created']) && isset($_SESSION['creation_result'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SubForge - Subdomain Management</title>
+    <title>Demetrly - Subdomain Management</title>
     <style>
         * {
             margin: 0;

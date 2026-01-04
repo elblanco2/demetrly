@@ -1,5 +1,5 @@
 /**
- * SubForge Modern Template - Main JavaScript
+ * Demetrly Modern Template - Main JavaScript
  * Handles smooth scrolling, animations, and interactions
  */
 
@@ -124,5 +124,5 @@
         }, 100);
     });
 
-    console.log('✨ SubForge Modern Template loaded successfully!');
+    console.log('✨ Demetrly Modern Template loaded successfully!');
 })();

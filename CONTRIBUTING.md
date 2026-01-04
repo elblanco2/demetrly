@@ -1,6 +1,6 @@
-# Contributing to SubForge
+# Contributing to Demetrly
 
-Thank you for considering contributing to SubForge! We welcome contributions from the community.
+Thank you for considering contributing to Demetrly! We welcome contributions from the community.
 
 ## Table of Contents
 
@@ -88,15 +88,15 @@ AI API keys (Claude or Gemini)
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/subforge.git
-cd subforge
+git clone https://github.com/YOUR_USERNAME/demetrly.git
+cd demetrly
 
 # 2. Create config
 cp creator_config.sample.php creator_config.php
 # Edit with your test credentials
 
 # 3. Create test database
-mkdir -p /tmp/subforge-data
+mkdir -p /tmp/demetrly-data
 php test-db.php
 
 # 4. Run local PHP server
@@ -329,8 +329,8 @@ For significant changes, update CHANGELOG.md:
 
 ## Getting Help
 
-- **Questions**: Use [GitHub Discussions](https://github.com/yourusername/subforge/discussions)
-- **Bugs**: Create an [issue](https://github.com/yourusername/subforge/issues)
+- **Questions**: Use [GitHub Discussions](https://github.com/yourusername/demetrly/discussions)
+- **Bugs**: Create an [issue](https://github.com/yourusername/demetrly/issues)
 - **Chat**: (Future: Discord or Slack channel)
 
 ## Recognition
@@ -346,6 +346,6 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-**Thank you for contributing to SubForge!** 🎉
+**Thank you for contributing to Demetrly!** 🎉
 
 Every contribution, no matter how small, is valued and appreciated.

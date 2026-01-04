@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-We take security seriously. If you discover a security vulnerability in SubForge, please report it responsibly.
+We take security seriously. If you discover a security vulnerability in Demetrly, please report it responsibly.
 
 ### How to Report
 
@@ -103,4 +103,4 @@ We acknowledge security researchers who responsibly disclose vulnerabilities:
 
 - (None yet)
 
-Thank you for helping keep SubForge secure!
+Thank you for helping keep Demetrly secure!
