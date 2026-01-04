@@ -337,15 +337,43 @@ function callClaudeAPI($apiKey, $systemPrompt, $messages) {
 function parseActions($content) {
     $actions = [];
 
-    // Match <action type="..." label="..." autoExecute="..." />
-    preg_match_all('/<action\s+type="([^"]+)"\s+label="([^"]+)"(?:\s+autoExecute="(true|false)")?\s*\/>/', $content, $matches, PREG_SET_ORDER);
+    // Match <action ... /> tags (any attributes in any order)
+    preg_match_all('/<action\s+([^>]+?)\s*\/>/', $content, $tagMatches, PREG_SET_ORDER);
 
-    foreach ($matches as $match) {
+    foreach ($tagMatches as $tagMatch) {
+        $attributesString = $tagMatch[1];
+
+        // Extract all attributes (name="value" pairs)
+        preg_match_all('/(\w+)="([^"]*)"/', $attributesString, $attrMatches, PREG_SET_ORDER);
+
+        $attributes = [];
+        foreach ($attrMatches as $attrMatch) {
+            $attributes[$attrMatch[1]] = $attrMatch[2];
+        }
+
+        // Must have at least 'type' attribute
+        if (!isset($attributes['type'])) {
+            continue;
+        }
+
+        // Extract known attributes
+        $type = $attributes['type'];
+        $label = $attributes['label'] ?? ucfirst(str_replace('_', ' ', $type));
+        $autoExecute = isset($attributes['autoExecute']) && $attributes['autoExecute'] === 'true';
+
+        // All other attributes become params
+        $params = [];
+        foreach ($attributes as $key => $value) {
+            if (!in_array($key, ['type', 'label', 'autoExecute'])) {
+                $params[$key] = $value;
+            }
+        }
+
         $actions[] = [
-            'type' => $match[1],
-            'label' => $match[2],
-            'autoExecute' => isset($match[3]) && $match[3] === 'true',
-            'params' => []
+            'type' => $type,
+            'label' => $label,
+            'autoExecute' => $autoExecute,
+            'params' => $params
         ];
     }
 
