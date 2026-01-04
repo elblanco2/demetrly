@@ -1,0 +1,86 @@
+# SubForge .gitignore
+
+# Configuration files (NEVER commit credentials!)
+creator_config.php
+config.php
+/config/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+/data/
+
+# Log files
+*.log
+/logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# PHP
+/vendor/
+composer.phar
+composer.lock
+
+# Node (if added in future)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.backup
+*.bak
+backup/
+backups/
+
+# Test files
+/tests/coverage/
+phpunit.xml
+
+# Build files (if added)
+/dist/
+/build/
+
+# Sensitive test data
+test_config.php
+test_credentials.php
+
+# Test and debug files
+check-db.php
+debug-test-file.php
+test-db.php
+test-delete.php
+test-delete-simple.php
