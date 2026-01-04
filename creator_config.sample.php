@@ -64,10 +64,15 @@ return [
     'log_path' => '/home/your_username/logs/subdomain_creation.log',
 
     // Template directory for new subdomains
-    // Default: 'ai-assistant' - Deploys AI chat interface that helps with deployment
+    // Default: 'ai-assistant-v1.1' - Latest AI Assistant with autonomous deployment
+    //          Features: Protected /ai/ directory, upload detection, beginner/expert modes
+    // Legacy: 'ai-assistant' - v1.0 (AI at root, no autonomous deployment)
     // Alternative: 'modern' - Beautiful static template
     // Custom: Point to your own template directory
-    'template_path' => __DIR__ . '/templates/ai-assistant',
+    'template_path' => __DIR__ . '/templates/ai-assistant-v1.1',
+
+    // If you prefer the v1.0 AI assistant (backward compatibility):
+    // 'template_path' => __DIR__ . '/templates/ai-assistant',
 
     // If you prefer the static modern template instead:
     // 'template_path' => __DIR__ . '/templates/modern',

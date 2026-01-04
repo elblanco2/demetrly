@@ -1,0 +1,33 @@
+# Security: Prevent execution of uploaded scripts
+# Only allow file downloads, no script execution
+
+# Deny access by default
+Order Deny,Allow
+Deny from all
+
+# Allow PHP scripts (api.php needs to read uploads)
+<FilesMatch "\.php$">
+    Allow from all
+</FilesMatch>
+
+# Prevent script execution - remove handlers
+RemoveHandler .php .phtml .php3 .php4 .php5 .phps
+RemoveHandler .py .pl .cgi .asp .aspx .jsp .sh
+RemoveType .php .phtml .php3 .php4 .php5 .phps
+RemoveType .py .pl .cgi .asp .aspx .jsp .sh
+
+# Allow downloads of archives and common file types
+<FilesMatch "\.(zip|tar|gz|tgz|7z|rar|jpg|jpeg|png|gif|pdf|txt|md)$">
+    Allow from all
+    ForceType application/octet-stream
+    Header set Content-Disposition attachment
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Prevent access to hidden files (.htaccess, .git, etc.)
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

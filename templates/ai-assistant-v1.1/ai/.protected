@@ -1,0 +1,11 @@
+AI Assistant Directory - DO NOT DELETE
+
+This directory contains the Demetrly AI Assistant v1.1
+Deleting this directory will remove your AI deployment helper.
+
+To redeploy the AI assistant, you would need to:
+1. Re-run the subdomain creation process
+2. Or manually copy the template from /templates/ai-assistant-v1.1/ai/
+
+Created by: Demetrly v1.1
+Protection marker: This file indicates a protected directory

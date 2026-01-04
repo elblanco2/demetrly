@@ -1,0 +1,730 @@
+<?php
+/**
+ * AI Deployment Assistant - Backend API
+ * Proxies requests to Anthropic Claude API
+ */
+
+header('Content-Type: application/json');
+
+// Load configuration
+$configPath = __DIR__ . '/config.php';
+if (!file_exists($configPath)) {
+    die(json_encode(['success' => false, 'error' => 'Configuration not found']));
+}
+
+$config = require $configPath;
+
+// Get request data
+$input = json_decode(file_get_contents('php://input'), true);
+
+if (!$input) {
+    die(json_encode(['success' => false, 'error' => 'Invalid request']));
+}
+
+// Handle action requests
+if (isset($input['action'])) {
+    handleAction($input['action'], $input['params'] ?? []);
+    exit;
+}
+
+// Handle chat messages
+if (!isset($input['message'])) {
+    die(json_encode(['success' => false, 'error' => 'Message required']));
+}
+
+$userMessage = $input['message'];
+$history = $input['history'] ?? [];
+$userMode = $input['userMode'] ?? 'beginner';
+
+// Build system prompt
+$systemPrompt = buildSystemPrompt($config, $userMode);
+
+// Build conversation for Claude
+$messages = [];
+
+// Add history (excluding system messages)
+foreach ($history as $msg) {
+    if ($msg['role'] !== 'system') {
+        $messages[] = [
+            'role' => $msg['role'],
+            'content' => $msg['content']
+        ];
+    }
+}
+
+// Add current user message
+$messages[] = [
+    'role' => 'user',
+    'content' => $userMessage
+];
+
+// Call Claude API
+$response = callClaudeAPI($config['ANTHROPIC_API_KEY'], $systemPrompt, $messages);
+
+if ($response['success']) {
+    // Parse response for actions
+    $actions = parseActions($response['content']);
+
+    echo json_encode([
+        'success' => true,
+        'response' => $response['content'],
+        'actions' => $actions
+    ]);
+} else {
+    echo json_encode([
+        'success' => false,
+        'error' => $response['error']
+    ]);
+}
+
+/**
+ * Build system prompt with context
+ */
+function buildSystemPrompt($config, $userMode = 'beginner') {
+    $domain = $config['FULL_DOMAIN'];
+    $subdomainName = $config['SITE_NAME'];
+
+    // Mode-specific instructions
+    $modeInstructions = ($userMode === 'beginner') ?
+        "USER MODE: BEGINNER
+- Explain each step before executing actions
+- Define technical terms when first mentioned
+- Use analogies and simple language
+- Offer learning opportunities
+- Show 'Why we're doing this' context
+- Ask 'Does this make sense?' after complex explanations
+- Be patient and educational" :
+        "USER MODE: EXPERT
+- Concise, technical responses
+- Assume user knows terminology
+- Show technical details (paths, permissions, commands)
+- Fewer confirmation prompts
+- Direct action-oriented language
+- Focus on efficiency";
+
+    return "You are an AI deployment assistant for the subdomain: {$domain}
+
+Your role is to help users deploy applications, fix errors, and configure their site on a cPanel shared hosting environment.
+
+{$modeInstructions}
+
+CRITICAL LOCATION INFO:
+- You are located in the /ai/ subdirectory
+- Your files: /ai/index.html, /ai/chat.js, /ai/api.php (this file)
+- User's web root: / (parent directory)
+- Uploads staging area: /uploads/
+- NEVER modify or delete files in /ai/ directory - this would destroy you!
+- When deploying apps, deploy to / or /app/, NEVER to /ai/
+
+IMPORTANT CAPABILITIES:
+You can autonomously deploy applications via action tags:
+- Extract ZIP files from /uploads/
+- Analyze project types (React, Vue, PHP, WordPress, static HTML)
+- Deploy files to web root (protecting /ai/ and /uploads/)
+- Fix file permissions
+- Check if Node.js is available
+- Create upload interfaces
+- Clean up after deployments
+
+ENVIRONMENT INFO:
+- Platform: cPanel shared hosting
+- PHP Version: " . PHP_VERSION . "
+- AI Location: " . dirname(__FILE__) . " (/ai/ subdirectory)
+- Web Root: " . dirname(dirname(__FILE__)) . " (parent directory)
+- Subdomain: {$domain}
+- Database: " . ($config['DB_NAME'] ?? 'Not configured') . "
+- ZipArchive: " . (class_exists('ZipArchive') ? 'Available' : 'Not available') . "
+
+DEPLOYMENT WORKFLOW:
+1. User uploads ZIP to /uploads/ (via upload.php)
+2. You detect the upload (chat.js polls every 10 seconds)
+3. You proactively ask: \"I see filename.zip! Should I deploy it?\"
+4. User confirms
+5. You extract → analyze → deploy → set permissions → cleanup
+6. Total time: ~30 seconds, fully autonomous
+
+ACTION TAGS:
+When you want to execute a server action, use this format:
+<action type=\"list_uploads\" label=\"Check Uploaded Files\" autoExecute=\"true\" />
+<action type=\"extract_zip\" filename=\"app.zip\" label=\"Extract ZIP\" />
+<action type=\"deploy_app\" source_path=\"extracted_folder\" target=\"root\" label=\"Deploy to Web Root\" />
+
+Available actions:
+- list_uploads: List files in /uploads/ directory
+- extract_zip: Extract ZIP using PHP ZipArchive (params: filename)
+- detect_project_type: Analyze extracted files to identify React/Vue/PHP/etc (params: path)
+- check_node_available: Test if Node.js/npm are available on this server
+- deploy_app: Copy files to web root, protecting /ai/ and /uploads/ (params: source_path, target)
+- cleanup_uploads: Remove ZIP and extracted files after deployment (params: filename, extracted_dir)
+- fix_permissions: chmod files/folders appropriately (644 for files, 755 for dirs)
+- create_upload: Create drag-drop upload interface at /upload.php
+- check_logs: Read error logs
+- check_requirements: Check PHP version/extensions
+
+NODE.JS PROJECT GUIDANCE:
+When you detect a Node.js project (package.json) without build output:
+1. Check if Node.js is available: <action type=\"check_node_available\" />
+2. If available: Guide user through building on server (npm install, npm run build)
+3. If not available: Explain options:
+   - Build locally and upload the /build/ or /dist/ folder as ZIP
+   - Deploy to Vercel/Netlify instead
+   - Look for static export option (Next.js: next export)
+4. Offer to create upload interface for built files
+
+SECURITY:
+- All paths validated with realpath()
+- ZIP extraction checks for path traversal (rejects ../)
+- deploy_app enforces protected directories
+- /uploads/.htaccess prevents script execution
+- File permissions: 644 (files), 755 (dirs)
+
+Be proactive but friendly. Make deployment feel easy!";
+}
+
+/**
+ * Call Claude API
+ */
+function callClaudeAPI($apiKey, $systemPrompt, $messages) {
+    $url = 'https://api.anthropic.com/v1/messages';
+
+    $data = [
+        'model' => 'claude-sonnet-4-5-20250929',
+        'max_tokens' => 4096,
+        'system' => $systemPrompt,
+        'messages' => $messages
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'x-api-key: ' . $apiKey,
+        'anthropic-version: 2023-06-01'
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        return [
+            'success' => false,
+            'error' => 'API request failed: ' . $httpCode
+        ];
+    }
+
+    $result = json_decode($response, true);
+
+    if (isset($result['content'][0]['text'])) {
+        return [
+            'success' => true,
+            'content' => $result['content'][0]['text']
+        ];
+    }
+
+    return [
+        'success' => false,
+        'error' => 'Invalid API response'
+    ];
+}
+
+/**
+ * Parse action tags from response
+ */
+function parseActions($content) {
+    $actions = [];
+
+    // Match <action type="..." label="..." autoExecute="..." />
+    preg_match_all('/<action\s+type="([^"]+)"\s+label="([^"]+)"(?:\s+autoExecute="(true|false)")?\s*\/>/', $content, $matches, PREG_SET_ORDER);
+
+    foreach ($matches as $match) {
+        $actions[] = [
+            'type' => $match[1],
+            'label' => $match[2],
+            'autoExecute' => isset($match[3]) && $match[3] === 'true',
+            'params' => []
+        ];
+    }
+
+    return $actions;
+}
+
+/**
+ * Handle server actions
+ */
+function handleAction($action, $params) {
+    $currentDir = __DIR__;
+
+    switch ($action) {
+        case 'fix_permissions':
+            // Fix file permissions
+            exec("find {$currentDir} -type f -exec chmod 644 {} \;");
+            exec("find {$currentDir} -type d -exec chmod 755 {} \;");
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Permissions fixed! Files: 644, Directories: 755'
+            ]);
+            break;
+
+        case 'create_upload':
+            $uploadCode = getUploadTemplate();
+            file_put_contents($currentDir . '/upload.php', $uploadCode);
+
+            $uploadUrl = $config['WEBSITE_URL'] . '/upload.php';
+            echo json_encode([
+                'success' => true,
+                'message' => "Upload interface created! Visit {$uploadUrl} to drag and drop your files."
+            ]);
+            break;
+
+        case 'check_logs':
+            $errorLog = ini_get('error_log');
+            if (file_exists($errorLog)) {
+                $logs = file_get_contents($errorLog);
+                $recentLogs = implode("\n", array_slice(explode("\n", $logs), -20));
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Recent error logs:\n\n{$recentLogs}"
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'No error logs found (that\'s good!)'
+                ]);
+            }
+            break;
+
+        case 'check_requirements':
+            $extensions = get_loaded_extensions();
+            $info = [
+                'PHP Version' => PHP_VERSION,
+                'Extensions' => implode(', ', $extensions),
+                'Memory Limit' => ini_get('memory_limit'),
+                'Max Upload' => ini_get('upload_max_filesize'),
+                'Writable' => is_writable($currentDir) ? 'Yes' : 'No'
+            ];
+
+            $message = "System Information:\n\n";
+            foreach ($info as $key => $value) {
+                $message .= "• {$key}: {$value}\n";
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => $message
+            ]);
+            break;
+
+        case 'list_uploads':
+            $uploadsDir = dirname(__DIR__) . '/uploads/';
+
+            if (!is_dir($uploadsDir)) {
+                echo json_encode(['success' => false, 'error' => 'Uploads directory not found']);
+                break;
+            }
+
+            $files = array_diff(scandir($uploadsDir), ['.', '..', '.htaccess']);
+            $fileList = [];
+
+            foreach ($files as $file) {
+                $filePath = $uploadsDir . $file;
+                if (is_file($filePath)) {
+                    $fileList[] = [
+                        'name' => $file,
+                        'size' => filesize($filePath),
+                        'size_human' => formatBytes(filesize($filePath)),
+                        'uploaded' => date('Y-m-d H:i:s', filemtime($filePath)),
+                        'extension' => pathinfo($file, PATHINFO_EXTENSION)
+                    ];
+                }
+            }
+
+            echo json_encode([
+                'success' => true,
+                'files' => $fileList,
+                'count' => count($fileList)
+            ]);
+            break;
+
+        case 'extract_zip':
+            $filename = $params['filename'] ?? '';
+            $uploadsDir = dirname(__DIR__) . '/uploads/';
+            $zipPath = $uploadsDir . basename($filename);
+
+            if (empty($filename)) {
+                echo json_encode(['success' => false, 'error' => 'Filename required']);
+                break;
+            }
+
+            if (!file_exists($zipPath)) {
+                echo json_encode(['success' => false, 'error' => 'ZIP file not found: ' . basename($filename)]);
+                break;
+            }
+
+            if (!class_exists('ZipArchive')) {
+                echo json_encode(['success' => false, 'error' => 'ZipArchive not available on this server']);
+                break;
+            }
+
+            $extractDir = $uploadsDir . 'extracted_' . pathinfo($filename, PATHINFO_FILENAME);
+            if (is_dir($extractDir)) {
+                recursiveDelete($extractDir);
+            }
+            mkdir($extractDir, 0755, true);
+
+            $zip = new ZipArchive;
+            $result = $zip->open($zipPath);
+
+            if ($result !== TRUE) {
+                echo json_encode(['success' => false, 'error' => 'Failed to open ZIP (error code: ' . $result . ')']);
+                break;
+            }
+
+            // Security: Check for path traversal
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $name = $zip->getNameIndex($i);
+                if (strpos($name, '..') !== false) {
+                    $zip->close();
+                    echo json_encode(['success' => false, 'error' => 'ZIP contains path traversal - rejected for security']);
+                    break 2;
+                }
+            }
+
+            $zip->extractTo($extractDir);
+            $numFiles = $zip->numFiles;
+            $zip->close();
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'ZIP extracted successfully',
+                'extract_path' => basename($extractDir),
+                'files_count' => $numFiles
+            ]);
+            break;
+
+        case 'detect_project_type':
+            $projectPath = $params['path'] ?? '';
+            $uploadsDir = dirname(__DIR__) . '/uploads/';
+            $fullPath = realpath($uploadsDir . basename($projectPath));
+
+            if (!$fullPath || !is_dir($fullPath)) {
+                echo json_encode(['success' => false, 'error' => 'Project directory not found']);
+                break;
+            }
+
+            $detection = [
+                'type' => 'unknown',
+                'framework' => null,
+                'requires_build' => false,
+                'has_build_output' => false,
+                'deployment_ready' => false,
+                'files_found' => [],
+                'build_command' => null,
+                'build_output_dir' => null
+            ];
+
+            $checks = [
+                'package.json' => 'nodejs',
+                'composer.json' => 'php',
+                'index.html' => 'static',
+                'index.php' => 'php',
+                'wp-config.php' => 'wordpress',
+                'build' => 'has_build',
+                'dist' => 'has_dist',
+                'public' => 'has_public'
+            ];
+
+            foreach ($checks as $file => $indicator) {
+                if (file_exists($fullPath . '/' . $file)) {
+                    $detection['files_found'][] = $file;
+
+                    if ($indicator === 'nodejs') {
+                        $detection['type'] = 'nodejs';
+                        $detection['requires_build'] = true;
+
+                        $pkg = json_decode(file_get_contents($fullPath . '/package.json'), true);
+                        if (isset($pkg['dependencies']['react'])) $detection['framework'] = 'react';
+                        if (isset($pkg['dependencies']['vue'])) $detection['framework'] = 'vue';
+                        if (isset($pkg['dependencies']['next'])) $detection['framework'] = 'nextjs';
+                        if (isset($pkg['scripts']['build'])) $detection['build_command'] = 'npm run build';
+                    } elseif ($indicator === 'has_build' || $indicator === 'has_dist' || $indicator === 'has_public') {
+                        $detection['has_build_output'] = true;
+                        $detection['build_output_dir'] = $file;
+                    } elseif ($indicator === 'static' && $detection['type'] === 'unknown') {
+                        $detection['type'] = 'static';
+                        $detection['deployment_ready'] = true;
+                    } elseif ($indicator === 'php' || $indicator === 'wordpress') {
+                        $detection['type'] = $indicator;
+                        $detection['deployment_ready'] = true;
+                    }
+                }
+            }
+
+            if ($detection['type'] === 'nodejs' && $detection['has_build_output']) {
+                $detection['deployment_ready'] = true;
+            }
+
+            echo json_encode(['success' => true, 'detection' => $detection]);
+            break;
+
+        case 'check_node_available':
+            $nodeCheck = exec("which node 2>&1", $nodeOutput, $nodeReturn);
+            $npmCheck = exec("which npm 2>&1", $npmOutput, $npmReturn);
+
+            $nodeAvailable = ($nodeReturn === 0 && !empty($nodeCheck));
+            $npmAvailable = ($npmReturn === 0 && !empty($npmCheck));
+
+            $versions = [];
+            if ($nodeAvailable) {
+                exec("node --version 2>&1", $vOut);
+                $versions['node'] = $vOut[0] ?? 'unknown';
+            }
+            if ($npmAvailable) {
+                exec("npm --version 2>&1", $vOut);
+                $versions['npm'] = $vOut[0] ?? 'unknown';
+            }
+
+            echo json_encode([
+                'success' => true,
+                'node_available' => $nodeAvailable,
+                'npm_available' => $npmAvailable,
+                'versions' => $versions,
+                'paths' => ['node' => $nodeCheck ?: null, 'npm' => $npmCheck ?: null]
+            ]);
+            break;
+
+        case 'deploy_app':
+            $sourcePath = $params['source_path'] ?? '';
+            $targetLocation = $params['target'] ?? 'root';
+
+            $uploadsDir = dirname(__DIR__) . '/uploads/';
+            $webRoot = dirname(__DIR__);
+
+            $fullSourcePath = realpath($uploadsDir . basename($sourcePath));
+            if (!$fullSourcePath || !is_dir($fullSourcePath)) {
+                echo json_encode(['success' => false, 'error' => 'Source directory not found']);
+                break;
+            }
+
+            $targetPath = ($targetLocation === 'root') ? $webRoot : $webRoot . '/app';
+            if ($targetLocation === 'app' && !is_dir($targetPath)) {
+                mkdir($targetPath, 0755, true);
+            }
+
+            $protectedDirs = ['ai', 'uploads'];
+
+            try {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($fullSourcePath, RecursiveDirectoryIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST
+                );
+
+                $deployedFiles = 0;
+                foreach ($iterator as $item) {
+                    $relativePath = str_replace($fullSourcePath . '/', '', $item->getPathname());
+                    $destinationPath = $targetPath . '/' . $relativePath;
+
+                    // SAFETY: Skip protected directories
+                    $skip = false;
+                    foreach ($protectedDirs as $protected) {
+                        if (strpos($relativePath, $protected . '/') === 0 || $relativePath === $protected) {
+                            $skip = true;
+                            break;
+                        }
+                    }
+                    if ($skip) continue;
+
+                    if ($item->isDir()) {
+                        if (!is_dir($destinationPath)) {
+                            mkdir($destinationPath, 0755, true);
+                        }
+                    } else {
+                        copy($item->getPathname(), $destinationPath);
+                        chmod($destinationPath, 0644);
+                        $deployedFiles++;
+                    }
+                }
+
+                $config = require __DIR__ . '/config.php';
+                $deployUrl = ($targetLocation === 'root') ?
+                    $config['WEBSITE_URL'] :
+                    $config['WEBSITE_URL'] . '/app/';
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Application deployed successfully ({$deployedFiles} files)",
+                    'deployed_to' => $targetLocation === 'root' ? '/' : '/app/',
+                    'url' => $deployUrl,
+                    'files_deployed' => $deployedFiles
+                ]);
+
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'error' => 'Deployment failed: ' . $e->getMessage()]);
+            }
+            break;
+
+        case 'cleanup_uploads':
+            $filename = $params['filename'] ?? '';
+            $extractedDir = $params['extracted_dir'] ?? '';
+            $uploadsDir = dirname(__DIR__) . '/uploads/';
+
+            $removed = [];
+
+            if ($filename) {
+                $zipPath = $uploadsDir . basename($filename);
+                if (file_exists($zipPath)) {
+                    unlink($zipPath);
+                    $removed[] = $filename;
+                }
+            }
+
+            if ($extractedDir) {
+                $extractPath = $uploadsDir . basename($extractedDir);
+                if (is_dir($extractPath)) {
+                    recursiveDelete($extractPath);
+                    $removed[] = $extractedDir;
+                }
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Cleanup completed',
+                'removed' => $removed
+            ]);
+            break;
+
+        default:
+            echo json_encode([
+                'success' => false,
+                'error' => 'Unknown action: ' . $action
+            ]);
+    }
+}
+
+/**
+ * Helper: Format bytes to human-readable size
+ */
+function formatBytes($bytes, $precision = 2) {
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        $bytes /= 1024;
+    }
+
+    return round($bytes, $precision) . ' ' . $units[$i];
+}
+
+/**
+ * Helper: Recursively delete directory and contents
+ */
+function recursiveDelete($dir) {
+    if (!is_dir($dir)) {
+        return false;
+    }
+
+    $items = array_diff(scandir($dir), ['.', '..']);
+
+    foreach ($items as $item) {
+        $path = $dir . '/' . $item;
+        is_dir($path) ? recursiveDelete($path) : unlink($path);
+    }
+
+    return rmdir($dir);
+}
+
+/**
+ * Get upload interface template
+ */
+function getUploadTemplate() {
+    return '<?php
+/**
+ * Simple File Upload Interface
+ * Auto-generated by AI Assistant
+ */
+
+$uploadDir = __DIR__ . "/uploads/";
+
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["file"])) {
+    $file = $_FILES["file"];
+    $targetPath = $uploadDir . basename($file["name"]);
+
+    if (move_uploaded_file($file["tmp_name"], $targetPath)) {
+        echo json_encode(["success" => true, "message" => "File uploaded!"]);
+    } else {
+        echo json_encode(["success" => false, "error" => "Upload failed"]);
+    }
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .drop-zone { border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 8px; cursor: pointer; }
+        .drop-zone.dragover { background: #f0f0f0; border-color: #666; }
+    </style>
+</head>
+<body>
+    <h1>📁 File Upload</h1>
+    <div class="drop-zone" id="dropZone">
+        <p>Drag & drop files here or click to browse</p>
+        <input type="file" id="fileInput" multiple style="display:none">
+    </div>
+    <div id="status"></div>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const status = document.getElementById("status");
+
+        dropZone.onclick = () => fileInput.click();
+
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        };
+
+        dropZone.ondragleave = () => {
+            dropZone.classList.remove("dragover");
+        };
+
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            uploadFiles(e.dataTransfer.files);
+        };
+
+        fileInput.onchange = () => {
+            uploadFiles(fileInput.files);
+        };
+
+        async function uploadFiles(files) {
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                status.innerHTML = `Uploading ${file.name}...`;
+
+                const response = await fetch("upload.php", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+                status.innerHTML += `<br>✓ ${file.name} uploaded!`;
+            }
+        }
+    </script>
+</body>
+</html>';
+}

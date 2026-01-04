@@ -528,28 +528,71 @@ function recursiveCopy($src, $dst) {
 function copyTemplateFiles($subdomainName, $config, $aiContent = null, $formData = null) {
     $templatePath = $config['template_path'];
     $targetPath = $config['web_root'] . "/{$subdomainName}.{$config['domain']}";
+    $fullDomain = "{$subdomainName}.{$config['domain']}";
 
     if (!is_dir($templatePath)) {
         logMessage("Template directory not found: {$templatePath}", 'ERROR');
         return ['success' => false, 'error' => 'Template directory not found'];
     }
 
-    // Copy template files
-    if (!recursiveCopy($templatePath, $targetPath)) {
-        logMessage("Failed to copy template files to {$targetPath}", 'ERROR');
-        return ['success' => false, 'error' => 'Failed to copy template files'];
+    // Check if this is v1.1 structure (has root/, ai/, uploads/ subdirectories)
+    $isV11 = is_dir($templatePath . '/root') && is_dir($templatePath . '/ai') && is_dir($templatePath . '/uploads');
+
+    if ($isV11) {
+        // V1.1 Template Structure
+        logMessage("Deploying AI Assistant v1.1 structure", 'INFO');
+
+        // 1. Copy root/ files to subdomain root
+        if (!recursiveCopy($templatePath . '/root', $targetPath)) {
+            logMessage("Failed to copy root files to {$targetPath}", 'ERROR');
+            return ['success' => false, 'error' => 'Failed to copy root files'];
+        }
+
+        // 2. Copy ai/ directory to /ai/ subdirectory
+        $aiTargetPath = $targetPath . '/ai';
+        if (!recursiveCopy($templatePath . '/ai', $aiTargetPath)) {
+            logMessage("Failed to copy AI files to {$aiTargetPath}", 'ERROR');
+            return ['success' => false, 'error' => 'Failed to copy AI files'];
+        }
+
+        // 3. Create uploads/ directory and copy .htaccess
+        $uploadsPath = $targetPath . '/uploads';
+        if (!is_dir($uploadsPath)) {
+            mkdir($uploadsPath, 0755, true);
+        }
+
+        if (file_exists($templatePath . '/uploads/.htaccess')) {
+            copy($templatePath . '/uploads/.htaccess', $uploadsPath . '/.htaccess');
+        }
+
+        // 4. Customize root/index.html
+        customizeRootIndex($targetPath . '/index.html', $subdomainName, $fullDomain, $formData);
+
+        // 5. Customize ai/config.php
+        customizeAIConfig($aiTargetPath . '/config.php', $subdomainName, $fullDomain, $config, $formData);
+
+        logMessage("AI Assistant v1.1 deployed to {$fullDomain}", 'SUCCESS');
+    } else {
+        // V1.0 Template Structure (backward compatibility)
+        logMessage("Deploying v1.0 template structure", 'INFO');
+
+        // Copy template files
+        if (!recursiveCopy($templatePath, $targetPath)) {
+            logMessage("Failed to copy template files to {$targetPath}", 'ERROR');
+            return ['success' => false, 'error' => 'Failed to copy template files'];
+        }
+
+        // Customize index.php with AI content or defaults
+        $aiContentData = ($aiContent && isset($aiContent['content'])) ? $aiContent['content'] : null;
+        customizeIndexWithAI($targetPath . '/index.php', $aiContentData, [
+            'name' => $subdomainName,
+            'focus' => $formData['focus'] ?? ucfirst($subdomainName),
+            'description' => $formData['description'] ?? 'Professional tools and resources for educators'
+        ]);
+
+        logMessage("Template files copied to {$fullDomain}", 'SUCCESS');
     }
 
-    // Customize index.php with AI content or defaults
-    // Pass AI content if available, otherwise function will use defaults from formData
-    $aiContentData = ($aiContent && isset($aiContent['content'])) ? $aiContent['content'] : null;
-    customizeIndexWithAI($targetPath . '/index.php', $aiContentData, [
-        'name' => $subdomainName,
-        'focus' => $formData['focus'] ?? ucfirst($subdomainName),
-        'description' => $formData['description'] ?? 'Professional tools and resources for educators'
-    ]);
-
-    logMessage("Template files copied to {$subdomainName}.{$config['domain']}", 'SUCCESS');
     return ['success' => true];
 }
 
@@ -580,6 +623,64 @@ function customizeIndexWithAI($indexPath, $aiContent, $subdomainData = null) {
     $content = str_replace('{{WELCOME_CONTENT}}', $welcomeContent, $content);
 
     file_put_contents($indexPath, $content);
+}
+
+/**
+ * Customize root/index.html for v1.1 template
+ */
+function customizeRootIndex($indexPath, $subdomainName, $fullDomain, $formData) {
+    if (!file_exists($indexPath)) {
+        logMessage("Root index.html not found: {$indexPath}", 'WARNING');
+        return;
+    }
+
+    $content = file_get_contents($indexPath);
+
+    // Prepare replacement values
+    $siteName = ucfirst($subdomainName);
+    $description = $formData['description'] ?? "{$siteName} deployment hub";
+
+    // Replace placeholders
+    $content = str_replace('{{SITE_NAME}}', sanitizeInput($siteName), $content);
+    $content = str_replace('{{FULL_DOMAIN}}', sanitizeInput($fullDomain), $content);
+    $content = str_replace('{{DESCRIPTION}}', sanitizeInput($description), $content);
+
+    file_put_contents($indexPath, $content);
+    logMessage("Customized root index.html for {$fullDomain}", 'INFO');
+}
+
+/**
+ * Customize ai/config.php for v1.1 template
+ */
+function customizeAIConfig($configPath, $subdomainName, $fullDomain, $config, $formData) {
+    $templateConfigPath = str_replace('/config.php', '/config.template.php', $configPath);
+
+    if (!file_exists($templateConfigPath)) {
+        logMessage("AI config template not found: {$templateConfigPath}", 'WARNING');
+        return;
+    }
+
+    $content = file_get_contents($templateConfigPath);
+
+    // Prepare replacement values
+    $description = $formData['description'] ?? ucfirst($subdomainName) . " AI deployment assistant";
+    $dbName = $config['db_prefix'] . $subdomainName;
+    $dbUser = $config['db_user'] ?? '';
+    $dbPass = $config['db_password'] ?? '';
+    $apiKey = $config['anthropic_api_key'] ?? '';
+
+    // Replace placeholders (match config.template.php exactly)
+    $content = str_replace('{{SUBDOMAIN_NAME}}', sanitizeInput(ucfirst($subdomainName)), $content);
+    $content = str_replace('{{FULL_DOMAIN}}', sanitizeInput($fullDomain), $content);
+    $content = str_replace('{{DESCRIPTION}}', sanitizeInput($description), $content);
+    $content = str_replace('{{DB_NAME}}', sanitizeInput($dbName), $content);
+    $content = str_replace('{{DB_USER}}', sanitizeInput($dbUser), $content);
+    $content = str_replace('{{DB_PASS}}', $dbPass, $content); // Don't sanitize password
+    $content = str_replace('{{ANTHROPIC_API_KEY}}', $apiKey, $content); // Don't sanitize API key
+
+    file_put_contents($configPath, $content);
+    chmod($configPath, 0600); // Secure config file
+    logMessage("Customized AI config for {$fullDomain}", 'INFO');
 }
 
 /**
