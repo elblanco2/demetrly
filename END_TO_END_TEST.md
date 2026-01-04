@@ -49,7 +49,93 @@ ls -la
 
 ---
 
-## 📋 Phase 2: Create Subdomain (WEB UI STEP)
+## ✅ Phase 1.5: Config Fixes (ACTUAL TEST - COMPLETED)
+
+### Issues Found During Testing:
+
+**Problem 1:** Config missing `'domain'` parameter
+```bash
+# Config had all API keys but was missing the domain parameter
+# This caused cPanel API to fail with "You must specify a main domain"
+
+# Fix: Add domain to config
+sed -i "85 a\\    'domain' => 'apiprofe.com'," ~/config/creator_config.php
+```
+
+**Problem 2:** Template path pointed to old `subdomaincreator` directory
+```bash
+# Config had: .../public_html/subdomaincreator/templates/ai-assistant
+# But actual path is: .../public_html/demetrly/templates/ai-assistant
+
+# Fix: Update template path
+sed -i 's/subdomaincreator/demetrly/' ~/config/creator_config.php
+```
+
+**Result:** Config now works correctly with Demetrly
+
+**Time:** ~5 minutes to debug and fix
+
+---
+
+## ✅ Phase 2: Create Subdomain (ACTUAL TEST - COMPLETED)
+
+### What We Actually Did:
+
+Instead of using the web UI (which requires browser), we created the subdomain entirely from the terminal using the internal Demetrly functions:
+
+```bash
+# 1. Create CLI creation script (uploaded to server)
+# This script loads config and calls createSubdomain()
+
+# 2. First attempt - partially succeeded:
+#    ✓ cPanel subdomain created
+#    ✓ Cloudflare DNS configured
+#    ✓ MySQL database created
+#    ✓ Directory structure created
+#    ✗ Template copy failed (path issue)
+
+# 3. Manually completed template deployment:
+cp -r ~/public_html/demetrly/templates/ai-assistant/* \
+      ~/public_html/demogame.apiprofe.com/
+
+# 4. Create config.php from template with proper values:
+cd ~/public_html/demogame.apiprofe.com
+sed 's/{{SUBDOMAIN_NAME}}/demogame/g' config.template.php | \
+sed 's/{{FULL_DOMAIN}}/demogame.apiprofe.com/g' | \
+sed 's/{{DB_NAME}}/ua896588_demogame/g' | \
+sed 's/{{DESCRIPTION}}/2048 puzzle game - testing Demetrly deployment/g' > config.php
+
+# 5. Update index.html placeholders:
+sed -i 's/{{SITE_NAME}}/demogame/g' index.html
+sed -i 's/{{FULL_DOMAIN}}/demogame.apiprofe.com/g' index.html
+```
+
+**Verification:**
+```bash
+# Check subdomain is accessible
+curl -s https://demogame.apiprofe.com/ | head -50
+# ✅ AI chat interface loads successfully!
+```
+
+**Result:**
+- URL: `https://demogame.apiprofe.com` ✅ LIVE
+- AI chat interface deployed ✅ WORKING
+- cPanel subdomain created ✅ CONFIRMED
+- Cloudflare DNS configured ✅ CONFIRMED
+- MySQL database: ua896588_demogame ✅ CREATED
+- All tracked in SQLite ✅ LOGGED
+
+**Time:** ~10 minutes including debugging
+
+**Lessons Learned:**
+1. Config MUST include `'domain'` parameter for cPanel API
+2. Template path must point to correct directory (demetrly, not subdomaincreator)
+3. CLI workflow works but needs some polish
+4. Manual template completion is straightforward fallback
+
+---
+
+## 📋 Phase 2 Alternative: Create Subdomain (WEB UI METHOD)
 
 ### Access Demetrly:
 1. Visit: `https://apiprofe.com/demetrly`

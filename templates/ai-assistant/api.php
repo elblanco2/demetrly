@@ -51,6 +51,12 @@ foreach ($history as $msg) {
     }
 }
 
+// Add current user message
+$messages[] = [
+    'role' => 'user',
+    'content' => $userMessage
+];
+
 // Call Claude API
 $response = callClaudeAPI($config['ANTHROPIC_API_KEY'], $systemPrompt, $messages);
 
@@ -139,7 +145,7 @@ function callClaudeAPI($apiKey, $systemPrompt, $messages) {
     $url = 'https://api.anthropic.com/v1/messages';
 
     $data = [
-        'model' => 'claude-3-5-sonnet-20241022',
+        'model' => 'claude-sonnet-4-5-20250929',
         'max_tokens' => 4096,
         'system' => $systemPrompt,
         'messages' => $messages
