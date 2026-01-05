@@ -932,7 +932,7 @@ function handleAction($action, $params) {
 
             $redirectRule = "\n# Auto-generated redirect to deployed app\n";
             $redirectRule .= "# Created: {$timestamp}\n";
-            $redirectRule .= "Redirect {$redirectType} / {$targetPath}\n";
+            $redirectRule .= "RedirectMatch {$redirectType} ^/$ {$targetPath}\n";
 
             try {
                 // Backup existing .htaccess
@@ -940,7 +940,7 @@ function handleAction($action, $params) {
                     $existingContent = file_get_contents($htaccessPath);
 
                     // Check if redirect already exists
-                    if (preg_match("/Redirect\s+(301|302)\s+\//", $existingContent)) {
+                    if (preg_match("/Redirect(Match)?\s+(301|302)\s+(\^\/\$|\/)/", $existingContent)) {
                         echo json_encode([
                             'success' => false,
                             'error' => 'A redirect from root (/) already exists',
