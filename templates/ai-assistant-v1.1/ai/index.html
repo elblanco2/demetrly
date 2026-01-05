@@ -39,6 +39,7 @@
             color: white;
             padding: 20px;
             text-align: center;
+            position: relative;
         }
 
         .chat-header h1 {
@@ -49,6 +50,25 @@
         .chat-header p {
             opacity: 0.9;
             font-size: 0.9rem;
+        }
+
+        .clear-chat-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
         .chat-messages {
@@ -377,6 +397,7 @@
 <body>
     <div class="chat-container">
         <div class="chat-header">
+            <button class="clear-chat-btn" onclick="clearChat()">🗑️ Clear Chat</button>
             <h1>🤖 AI Deployment Assistant</h1>
             <p>{{SITE_NAME}} - Powered by Claude</p>
         </div>
