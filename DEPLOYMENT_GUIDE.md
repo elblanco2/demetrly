@@ -115,24 +115,7 @@ Before uploading files, gather these credentials. You'll need them for configura
 - Skip this step
 - Set `cloudflare_enabled => false` in config (covered later)
 
-### 1.4 Server Information
-
-**Gather these details from your hosting provider:**
-
-- **cPanel Host:** Usually `your-username.your-host.com` or server IP
-- **cPanel Username:** Your cPanel username (e.g., `ua896588`)
-- **SSH Port:** Usually `22` or custom (e.g., `8228`)
-- **Web Root:** Usually `/home/username/public_html`
-
-**Example values:**
-```
-cPanel Host: ua896588.serversignin.com
-cPanel User: ua896588
-SSH Port: 8228
-Web Root: /home/ua896588/public_html
-```
-
-### 1.5 Admin Password
+### 1.4 Admin Password
 
 **Choose a strong password** for the subdomain creator admin panel.
 
@@ -166,7 +149,7 @@ ssh -p YOUR_SSH_PORT username@your-server.com
 
 **Example:**
 ```bash
-ssh -p 8228 ua896588@ua896588.serversignin.com
+ssh -p YOUR_SSH_PORT username@your-server.com
 ```
 
 ### 2.3 Create Directory Structure
@@ -198,7 +181,7 @@ scp -r -P YOUR_SSH_PORT subdomaincreator/* username@server:/home/username/public
 
 **Example:**
 ```bash
-scp -r -P 8228 subdomaincreator/* ua896588@ua896588.serversignin.com:/home/ua896588/public_html/lucasblanco.com/subdomaincreator/
+scp -r -P YOUR_SSH_PORT subdomaincreator/* username@your-server.com:/home/username/public_html/yourdomain.com/subdomaincreator/
 ```
 
 **Option B: Using cPanel File Manager**
@@ -354,17 +337,12 @@ nano ~/public_html/yourdomain.com/subdomaincreator/index.php
 
 **Find line ~20:**
 ```php
-$configPath = '/home/ua896588/config/creator_config.php';
+$configPath = '/home/username/config/creator_config.php';
 ```
 
 **Change to YOUR path:**
 ```php
 $configPath = '/home/username/config/creator_config_yourdomain.php';
-```
-
-**Example:**
-```php
-$configPath = '/home/ua896588/config/creator_config_lucasblanco.php';
 ```
 
 **Save and exit** (`Ctrl+O`, `Enter`, `Ctrl+X`)

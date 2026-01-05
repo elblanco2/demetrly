@@ -31,7 +31,7 @@ Print this checklist and mark off each step as you complete it.
 
 - [ ] cPanel Host: `_____________________`
 - [ ] cPanel Username: `_____________________`
-- [ ] SSH Port: `_____________________` (usually 22 or 8228)
+- [ ] SSH Port: `_____________________` (usually 22)
 - [ ] Web Root: `/home/_________/public_html`
 
 ### Choose Admin Password
