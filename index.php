@@ -1,6 +1,6 @@
 <?php
 /**
- * Subdomain Creation Agent for apiprofe.com
+ * Demetrly - cPanel Subdomain Automation System
  *
  * Automates the creation of new subdomains through a web interface
  * Integrates with cPanel, Cloudflare, and AI APIs (Anthropic/Gemini)
@@ -8,7 +8,7 @@
  * Based on the email webform app pattern with enhanced functionality
  *
  * @version 1.0
- * @author apiprofe.com Development Team
+ * @author Demetrly Development Team
  */
 
 // Session configuration
