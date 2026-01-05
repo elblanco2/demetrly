@@ -214,6 +214,27 @@ AVAILABLE ACTIONS:
     Format: <action type=\"check_requirements\" label=\"Check PHP Info\" autoExecute=\"true\" />
     When: User asks about server capabilities or you need version info
 
+11. create_redirect
+    Format: <action type=\"create_redirect\" type=\"302\" label=\"Create Redirect\" autoExecute=\"false\" />
+    When: After deploying an app to validate the location and create a redirect
+    Params: type (\"302\" temporary [default] or \"301\" permanent)
+    AutoExecute: false (always ask user for confirmation before creating redirects)
+
+    What it does:
+    - Searches /app/ directory for index.html
+    - Creates .htaccess redirect from root (/) to the app location
+    - Backs up existing .htaccess before modifying
+
+    Example response after deployment:
+    \"✅ Deployment complete! I found your app at /app/mini-snake-main/index.html
+
+    Would you like me to create a redirect so visitors to your root domain
+    automatically go to your app?
+
+    <action type=\"create_redirect\" type=\"302\" label=\"Create Redirect\" autoExecute=\"false\" />
+
+    This will add a temporary redirect to your .htaccess file.\"
+
 WORKFLOW EXAMPLE - USER UPLOADS ZIP:
 
 User: \"I uploaded myapp.zip, can you deploy it?\"
@@ -261,6 +282,30 @@ REMEMBER:
 - Don't just say \"I'm doing X\" - actually output <action type=\"X\" ... />
 - Multiple actions in one response is fine
 - Explain what you're doing, THEN output the action tag
+
+UPDATED DEPLOYMENT WORKFLOW (with redirect):
+
+After deploying an app with deploy_app action:
+
+1. Confirm deployment success
+2. Offer to create redirect:
+
+   \"✅ Deployment complete! Your app is at /app/[actual-path]/
+
+   Would you like me to create a redirect from your root domain?
+   This will make it so visitors to https://yourdomain.com automatically
+   go to https://yourdomain.com/app/[actual-path]/
+
+   <action type=\"create_redirect\" type=\"302\" label=\"Create Redirect\" autoExecute=\"false\" />
+
+   Note: This will replace your landing page with the app.\"
+
+3. If user confirms, the create_redirect action will:
+   - Find where index.html actually landed
+   - Create a 302 temporary redirect in .htaccess
+   - Backup existing .htaccess if present
+
+4. Confirm redirect created and provide final URL
 
 NODE.JS PROJECT GUIDANCE - CRITICAL:
 
@@ -821,6 +866,123 @@ function handleAction($action, $params) {
                 'message' => 'Cleanup completed',
                 'removed' => $removed
             ]);
+            break;
+
+        case 'create_redirect':
+            // Parameters
+            $redirectType = $params['type'] ?? '302';
+            $webRoot = dirname(__DIR__);
+            $appDir = $webRoot . '/app';
+
+            // Validate redirect type
+            if (!in_array($redirectType, ['301', '302'])) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Invalid redirect type. Use 301 or 302'
+                ]);
+                break;
+            }
+
+            // Step 1: Find index.html in /app/
+            if (!is_dir($appDir)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'App directory not found. Deploy an app first.'
+                ]);
+                break;
+            }
+
+            $indexFiles = [];
+
+            try {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($appDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::SELF_FIRST
+                );
+
+                foreach ($iterator as $file) {
+                    if ($file->isFile() && $file->getFilename() === 'index.html') {
+                        $relativePath = str_replace($webRoot, '', $file->getPathname());
+                        $indexFiles[] = $relativePath;
+                    }
+                }
+            } catch (Exception $e) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Error searching for index.html: ' . $e->getMessage()
+                ]);
+                break;
+            }
+
+            if (empty($indexFiles)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No index.html found in /app/. Cannot create redirect.',
+                    'suggestion' => 'Deploy an application first'
+                ]);
+                break;
+            }
+
+            // Use first index.html found (most likely the main app)
+            $targetPath = $indexFiles[0];
+
+            // Step 2: Create .htaccess redirect
+            $htaccessPath = $webRoot . '/.htaccess';
+            $timestamp = date('Y-m-d H:i:s');
+
+            $redirectRule = "\n# Auto-generated redirect to deployed app\n";
+            $redirectRule .= "# Created: {$timestamp}\n";
+            $redirectRule .= "Redirect {$redirectType} / {$targetPath}\n";
+
+            try {
+                // Backup existing .htaccess
+                if (file_exists($htaccessPath)) {
+                    $existingContent = file_get_contents($htaccessPath);
+
+                    // Check if redirect already exists
+                    if (preg_match("/Redirect\s+(301|302)\s+\//", $existingContent)) {
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'A redirect from root (/) already exists',
+                            'suggestion' => 'Remove existing redirect in .htaccess before creating a new one'
+                        ]);
+                        break;
+                    }
+
+                    // Create backup
+                    $backupPath = $htaccessPath . '.backup.' . time();
+                    copy($htaccessPath, $backupPath);
+
+                    // Append new redirect
+                    file_put_contents($htaccessPath, $existingContent . $redirectRule);
+                } else {
+                    // Create new .htaccess
+                    file_put_contents($htaccessPath, $redirectRule);
+                }
+
+                chmod($htaccessPath, 0644);
+
+                $config = require __DIR__ . '/config.php';
+                $domain = $config['WEBSITE_URL'];
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Created {$redirectType} redirect from / to {$targetPath}",
+                    'redirect_type' => $redirectType === '301' ? 'Permanent (301)' : 'Temporary (302)',
+                    'source' => '/',
+                    'target' => $targetPath,
+                    'full_url' => $domain . $targetPath,
+                    'htaccess_path' => '/.htaccess',
+                    'all_index_files' => $indexFiles,
+                    'note' => 'Root domain now redirects to your deployed app'
+                ]);
+
+            } catch (Exception $e) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Failed to create redirect: ' . $e->getMessage()
+                ]);
+            }
             break;
 
         default:

@@ -292,6 +292,20 @@ async function executeAction(action) {
                 }
             }
 
+            if (action.type === 'create_redirect') {
+                if (data.all_index_files && data.all_index_files.length > 1) {
+                    resultMessage += `\n\nNote: Found ${data.all_index_files.length} index.html files.`;
+                    resultMessage += `\nUsing: ${data.target}`;
+                    resultMessage += `\n\nAll found:\n`;
+                    data.all_index_files.forEach(f => {
+                        resultMessage += `• ${f}\n`;
+                    });
+                }
+                resultMessage += `\n\n🔗 Redirect created!`;
+                resultMessage += `\nVisit your root domain: ${data.full_url.replace(data.target, '')}`;
+                resultMessage += `\nIt will automatically redirect to: ${data.full_url}`;
+            }
+
             // Display in UI
             addMessage('assistant', resultMessage);
 
