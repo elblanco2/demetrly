@@ -236,13 +236,96 @@ async function executeAction(action) {
         const data = await response.json();
 
         if (data.success) {
-            addMessage('assistant', `✅ ${data.message || 'Action completed successfully!'}`);
+            // Start with base message
+            let resultMessage = `✅ ${data.message || 'Action completed successfully!'}`;
+
+            // Add action-specific details
+            if (action.type === 'list_uploads' && data.files) {
+                if (data.files.length === 0) {
+                    resultMessage += '\n\nNo files in uploads folder.';
+                } else {
+                    resultMessage += `\n\nFound ${data.count} file(s):\n`;
+                    data.files.forEach(f => {
+                        resultMessage += `• ${f.name} (${f.size_human})\n`;
+                    });
+                }
+            }
+
+            if (action.type === 'extract_zip') {
+                resultMessage += `\n\nExtracted to: ${data.extract_path}`;
+                resultMessage += `\nFiles extracted: ${data.files_count}`;
+            }
+
+            if (action.type === 'detect_project_type' && data.detection) {
+                const d = data.detection;
+                resultMessage += `\n\nProject Analysis:`;
+                resultMessage += `\n• Type: ${d.type}`;
+                if (d.framework) resultMessage += ` (${d.framework})`;
+                resultMessage += `\n• Files found: ${d.files_found.join(', ')}`;
+                resultMessage += `\n• Deployment ready: ${d.deployment_ready ? 'Yes' : 'No'}`;
+                if (d.build_command) resultMessage += `\n• Build command: ${d.build_command}`;
+            }
+
+            if (action.type === 'deploy_app') {
+                resultMessage += `\n\n🎉 Your app is live at: ${data.url}`;
+                resultMessage += `\nFiles deployed: ${data.files_deployed}`;
+            }
+
+            if (action.type === 'cleanup_uploads') {
+                resultMessage += `\n\nCleaned up:`;
+                if (data.removed) {
+                    data.removed.forEach(item => {
+                        resultMessage += `\n• ${item}`;
+                    });
+                }
+            }
+
+            if (action.type === 'check_node_available' && data.available !== undefined) {
+                if (data.available) {
+                    resultMessage += `\n\n✅ Node.js is available!`;
+                    if (data.versions) {
+                        resultMessage += `\n• Node: ${data.versions.node}`;
+                        resultMessage += `\n• NPM: ${data.versions.npm}`;
+                    }
+                } else {
+                    resultMessage += `\n\n❌ Node.js is not available on this server`;
+                }
+            }
+
+            // Display in UI
+            addMessage('assistant', resultMessage);
+
+            // ✅ CRITICAL FIX: Save to conversation history
+            conversationHistory.push({
+                role: 'assistant',
+                content: resultMessage
+            });
+
+            saveConversationHistory();
+
         } else {
-            addMessage('assistant', `❌ ${data.error || 'Action failed'}`);
+            // Handle errors
+            const errorMsg = `❌ ${data.error || 'Action failed'}`;
+            addMessage('assistant', errorMsg);
+
+            conversationHistory.push({
+                role: 'assistant',
+                content: errorMsg
+            });
+
+            saveConversationHistory();
         }
     } catch (error) {
         console.error('Action error:', error);
-        addMessage('assistant', '❌ Failed to execute action');
+        const errorMsg = '❌ Failed to execute action';
+        addMessage('assistant', errorMsg);
+
+        conversationHistory.push({
+            role: 'assistant',
+            content: errorMsg
+        });
+
+        saveConversationHistory();
     }
 }
 
