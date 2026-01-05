@@ -262,15 +262,97 @@ REMEMBER:
 - Multiple actions in one response is fine
 - Explain what you're doing, THEN output the action tag
 
-NODE.JS PROJECT GUIDANCE:
+NODE.JS PROJECT GUIDANCE - CRITICAL:
+
 When you detect a Node.js project (package.json) without build output:
-1. Check if Node.js is available: <action type=\"check_node_available\" />
-2. If available: Guide user through building on server (npm install, npm run build)
-3. If not available: Explain options:
-   - Build locally and upload the /build/ or /dist/ folder as ZIP
-   - Deploy to Vercel/Netlify instead
-   - Look for static export option (Next.js: next export)
-4. Offer to create upload interface for built files
+
+STEP 1: Check Node.js availability
+<action type=\"check_node_available\" label=\"Check Node.js\" autoExecute=\"true\" />
+
+STEP 2A: IF NODE.JS IS AVAILABLE on server (result shows node/npm found):
+**Guide user through cPanel Terminal deployment:**
+
+\"Great news! This server has Node.js installed. Here's how to deploy:
+
+1. **Open cPanel Terminal** (I'll guide you)
+   - Log into your cPanel
+   - Find 'Terminal' in the Advanced section
+   - Click to open a new terminal window
+
+2. **Navigate to this subdomain:**
+   ```
+   cd ~/public_html/{$domain}
+   ```
+
+3. **Install dependencies:**
+   ```
+   npm install
+   ```
+   (This might take 2-3 minutes - don't close the window)
+
+4. **Build the project:**
+   ```
+   npm run build
+   ```
+   (This creates the production-ready files)
+
+5. **Tell me when it's done** and I'll:
+   - Find the build output (usually /dist or /build)
+   - Deploy it to your web root
+   - Set proper permissions
+
+Would you like to try this? I can wait while you run these commands in cPanel Terminal.\"
+
+STEP 2B: IF NODE.JS IS NOT AVAILABLE (result shows not found):
+**Offer THREE clear deployment paths:**
+
+\"I detected this is a Node.js project, but this shared hosting doesn't have Node.js installed.
+
+**Don't worry - you have 3 good options:**
+
+📦 **Option 1: Build Locally (Recommended for learning)**
+1. On your computer, open Terminal/Command Prompt
+2. Navigate to the project folder
+3. Run: `npm install` (installs dependencies)
+4. Run: `npm run build` (creates /build or /dist folder)
+5. ZIP up ONLY the build folder
+6. Upload it here and I'll deploy it!
+
+Want me to create an upload interface for your build folder?
+
+🚀 **Option 2: Use Vercel (Easiest - Free!)**
+1. Go to https://vercel.com (free for personal projects)
+2. Click 'Import Project'
+3. Connect your GitHub repo
+4. Click Deploy (Vercel builds it automatically!)
+5. Get a live URL instantly
+
+This is the easiest option for Node.js apps!
+
+☁️ **Option 3: Use Netlify (Also Free!)**
+1. Go to https://netlify.com
+2. Drag and drop your project folder (or connect GitHub)
+3. Netlify builds and deploys automatically
+4. Get a custom URL
+
+**Which option sounds best to you?**
+
+If you choose Option 1, I can:
+- Create an upload interface
+- Guide you through the build process
+- Deploy the built files here
+
+If you choose Options 2 or 3, I can:
+- Explain the exact steps
+- Help you understand what's happening
+- Be here if you need help!\"
+
+REMEMBER:
+- Always check_node_available FIRST
+- Don't just say \"this won't work\" - offer solutions!
+- Be encouraging - Node.js apps are very deployable, just need different approach
+- Guide beginners through each step
+- Experts can skip to whichever option they prefer
 
 SECURITY:
 - All paths validated with realpath()
@@ -540,7 +622,14 @@ function handleAction($action, $params) {
         case 'detect_project_type':
             $projectPath = $params['path'] ?? '';
             $uploadsDir = dirname(__DIR__) . '/uploads/';
-            $fullPath = realpath($uploadsDir . basename($projectPath));
+
+            // Security: Prevent directory traversal
+            if (strpos($projectPath, '..') !== false) {
+                echo json_encode(['success' => false, 'error' => 'Invalid path']);
+                break;
+            }
+
+            $fullPath = realpath($uploadsDir . $projectPath);
 
             if (!$fullPath || !is_dir($fullPath)) {
                 echo json_encode(['success' => false, 'error' => 'Project directory not found']);
@@ -635,7 +724,13 @@ function handleAction($action, $params) {
             $uploadsDir = dirname(__DIR__) . '/uploads/';
             $webRoot = dirname(__DIR__);
 
-            $fullSourcePath = realpath($uploadsDir . basename($sourcePath));
+            // Security: Prevent directory traversal
+            if (strpos($sourcePath, '..') !== false) {
+                echo json_encode(['success' => false, 'error' => 'Invalid source path']);
+                break;
+            }
+
+            $fullSourcePath = realpath($uploadsDir . $sourcePath);
             if (!$fullSourcePath || !is_dir($fullSourcePath)) {
                 echo json_encode(['success' => false, 'error' => 'Source directory not found']);
                 break;
