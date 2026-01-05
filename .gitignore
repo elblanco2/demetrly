@@ -84,3 +84,4 @@ debug-test-file.php
 test-db.php
 test-delete.php
 test-delete-simple.php
+END_TO_END_TEST.md

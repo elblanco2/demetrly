@@ -44,25 +44,6 @@ Most subdomain tools only handle **one** thing - either DNS, or cPanel, or file 
 
 ---
 
-## 🌟 Real-World Examples
-
-**Subdomains created with this system:**
-
-| Subdomain | Purpose | Deployment | Time |
-|-----------|---------|------------|------|
-| `docarch.apiprofe.com` | Document archive with AI assistant | Custom PHP app | 3 min |
-| `haha.apiprofe.com` | Testing environment | Mini-snake game via AI chat | 5 min |
-| `tetrisdemo.apiprofe.com` | Game demo showcase | Tetris clone | 4 min |
-
-**Each subdomain includes:**
-- ✅ AI chat interface at `/ai/` for guided deployment
-- ✅ File upload with drag-and-drop UI
-- ✅ MySQL database automatically provisioned
-- ✅ Custom landing page with AI-generated content
-- ✅ Automatic redirect from root to deployed app
-
----
-
 ## 🎯 Perfect For
 
 - 🏢 **Web Agencies**: Quickly provision client subdomains with custom branding

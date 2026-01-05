@@ -228,12 +228,6 @@ cp ~/public_html/yourdomain.com/subdomaincreator/creator_config.sample.php \
    ~/config/creator_config_yourdomain.php
 ```
 
-**Example:**
-```bash
-cp ~/public_html/lucasblanco.com/subdomaincreator/creator_config.sample.php \
-   ~/config/creator_config_lucasblanco.php
-```
-
 ### 3.2 Edit Configuration
 
 **Open config file:**
@@ -955,21 +949,6 @@ Need help? Here's how to get support:
 2. **Search Issues:** [github.com/elblanco2/demetrly/issues](https://github.com/elblanco2/demetrly/issues)
 3. **Create Issue:** Include error logs, PHP version, steps to reproduce
 4. **Community:** Join discussions in GitHub Discussions
-
----
-
-## ✨ Success Stories
-
-**Example deployments using this system:**
-
-| Subdomain | Purpose | App Deployed | Time Taken |
-|-----------|---------|--------------|------------|
-| docarch.apiprofe.com | Document archive | Custom PHP app | 3 minutes |
-| haha.apiprofe.com | Testing | Mini-snake game | 5 minutes |
-| tetrisdemo.apiprofe.com | Demo | Tetris clone | 4 minutes |
-
-**Share your success story!**
-Create a pull request adding your deployment to this table.
 
 ---
 

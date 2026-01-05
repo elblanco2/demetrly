@@ -14,7 +14,10 @@ We take security seriously. If you discover a security vulnerability in Demetrly
 
 **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-Instead, please email: **security@apiprofe.com** (replace with your actual email)
+Instead, please use GitHub's private vulnerability reporting:
+1. Go to the repository on GitHub
+2. Click "Security" tab
+3. Click "Report a vulnerability"
 
 Include:
 - Description of the vulnerability
