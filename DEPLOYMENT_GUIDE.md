@@ -1,7 +1,7 @@
 # Complete Deployment Guide
-## Deploy SubForge Subdomain Creator to Your Domain
+## Deploy Demetrly Subdomain Creator to Your Domain
 
-This guide walks you through deploying the SubForge subdomain creator system to your own domain in ~45 minutes.
+This guide walks you through deploying the Demetrly subdomain creator system to your own domain in ~45 minutes.
 
 ---
 
@@ -32,11 +32,6 @@ By the end of this guide, you'll have:
   - MySQL database
   - Automatic DNS configuration
   - Landing page with AI chat access
-
-**Example Subdomains Created with This System:**
-- `docarch.apiprofe.com` - Document archive with AI assistant
-- `haha.apiprofe.com` - Test subdomain with mini-snake game deployed
-- `tetrisdemo.apiprofe.com` - Tetris game deployment demo
 
 ---
 
@@ -154,8 +149,8 @@ We'll generate a secure hash in Phase 3.
 **Option A: Git Clone (Recommended)**
 ```bash
 cd ~/Downloads
-git clone https://github.com/yourusername/subforge.git
-cd subforge/subdomaincreator
+git clone https://github.com/elblanco2/demetrly.git
+cd demetrly/subdomaincreator
 ```
 
 **Option B: Download ZIP**
@@ -826,7 +821,7 @@ If you're stuck:
    - **Remember to set back to false!**
 
 3. **GitHub Issues:**
-   - Search existing issues: [github.com/yourusername/subforge/issues](https://github.com)
+   - Search existing issues: [github.com/elblanco2/demetrly/issues](https://github.com/elblanco2/demetrly/issues)
    - Create new issue with:
      - PHP version (`php -v`)
      - Error logs
@@ -979,7 +974,7 @@ A: No automatic restore. Always backup important data before deleting.
 Need help? Here's how to get support:
 
 1. **Documentation:** Read all guides in this repo
-2. **Search Issues:** [github.com/yourusername/subforge/issues](https://github.com)
+2. **Search Issues:** [github.com/elblanco2/demetrly/issues](https://github.com/elblanco2/demetrly/issues)
 3. **Create Issue:** Include error logs, PHP version, steps to reproduce
 4. **Community:** Join discussions in GitHub Discussions
 

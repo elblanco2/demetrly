@@ -1,5 +1,5 @@
 # Setup Checklist
-## Quick Reference for Deploying SubForge
+## Quick Reference for Deploying Demetrly
 
 Print this checklist and mark off each step as you complete it.
 
@@ -199,7 +199,7 @@ Visit: `https://test01.yourdomain.com/ai/`
 
 ## ✅ Success!
 
-You've successfully deployed SubForge! Your system is ready for production use.
+You've successfully deployed Demetrly! Your system is ready for production use.
 
 ### Next Steps:
 
@@ -255,7 +255,7 @@ If you get stuck:
 
 1. ✅ Read: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - Full walkthrough
 2. ✅ Check: [Troubleshooting section](DEPLOYMENT_GUIDE.md#troubleshooting)
-3. ✅ Search: [GitHub Issues](https://github.com/yourusername/subforge/issues)
+3. ✅ Search: [GitHub Issues](https://github.com/elblanco2/demetrly/issues)
 4. ✅ Create: New issue with error logs
 
 **Common issues:**
